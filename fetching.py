@@ -28,4 +28,4 @@ while True:
                 dataframe = pd.DataFrame(station)
                 dataframe.to_csv(STATION_PATH, index=None)
 
-    time.sleep(60)
+    time.sleep(60 * 5)
