@@ -3,7 +3,7 @@ from fbprophet.plot import plot_plotly
 import pandas as pd
 import plotly.offline as py
 
-df = pd.read_csv('./data/stations_status_concat/43004.csv')
+df = pd.read_csv('./data/stations_status/6497.csv')
 df['ds'] = pd.to_datetime(df['last_reported'],unit='s')
 df['y'] = df['mechanical']
 

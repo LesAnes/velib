@@ -6,7 +6,7 @@ from datetime import datetime
 from pathlib import Path
 
 STATION_STATUS_URL = "https://velib-metropole-opendata.smoove.pro/opendata/Velib_Metropole/station_status.json"
-DATA_ROOT = "data/stations_status_concat"
+DATA_ROOT = "data/stations_status"
 
 while True:
     print(datetime.now())
