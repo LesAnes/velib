@@ -1,11 +1,13 @@
+import matplotlib.pyplot as plt
 import pandas as pd
 from fbprophet import Prophet
+from fbprophet.plot import add_changepoints_to_plot
 
 
-def read_data(station_id: int) -> pd.DataFrame:
+def format_data(station_id: int, is_mechanical: bool = True) -> pd.DataFrame:
     df = pd.read_csv(f'data/stations_status/{station_id}.csv')
     df['ds'] = pd.to_datetime(df['last_reported'], unit='s')
-    df['y'] = df['mechanical']
+    df['y'] = df['mechanical'] if is_mechanical else df['ebike']
     return df
 
 
@@ -21,11 +23,12 @@ def forecast_time_series(m: Prophet, n_hours: int) -> pd.DataFrame:
 
 
 if __name__ == "__main__":
-    station_id = 6512
-    df = read_data(station_id)
+    station_id = 38522
+    df = format_data(station_id)
     m = train_time_series(df)
     forecast = forecast_time_series(m, 6)
-    print(forecast)
 
-    # fig = plot_plotly(m, forecast)
-    # py.plot(fig)
+    fig = m.plot(forecast)
+    a = add_changepoints_to_plot(fig.gca(), m, forecast)
+    plt.plot()
+    plt.savefig('fig.png')
