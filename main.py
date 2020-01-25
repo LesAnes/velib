@@ -32,9 +32,12 @@ def number_bike_at_station(station_id: int):
     try:
         mechanical = station.get('num_bikes_available_types')[0].get('mechanical')
         ebike = station.get('num_bikes_available_types')[1].get('ebike')
+        del station['num_bikes_available_types']
+        station['mechanical'] = mechanical
+        station['ebike'] = ebike
     except IndexError:
         return {"station_id": station_id, "error": "no data available"}
-    return {"station_id": station_id, "num_bikes_available_mechanical": mechanical, "num_bikes_available_ebike": ebike}
+    return station
 
 
 @app.get("/predict/{station_id}/{bike_type}/{delta_hours}")
@@ -50,9 +53,15 @@ def predict_number_bike_at_station(station_id: int, bike_type: BikeType, delta_h
 
 
 @app.get("/closest/{latitude}/{longitude}")
-def closest_stations(latitude: float, longitude: float):
+def closest_stations(latitude: float, longitude: float, top: int = None):
     information = stations_information()
     information.loc[:, "distance"] = information.apply(
         lambda row: distance_between(latitude, longitude, row.lat, row.lon), axis=1)
     information_sorted = information.sort_values(by="distance").reset_index()
-    return json.loads(information_sorted.iloc[:5, :].to_json(orient='records'))
+    return json.loads(information_sorted.to_json(orient='records'))
+
+
+@app.get("/stations")
+def all_stations():
+    information = stations_information()
+    return json.loads(information.to_json(orient='records'))
