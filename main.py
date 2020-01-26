@@ -4,7 +4,7 @@ from enum import Enum
 
 from fastapi import FastAPI
 
-from data import stations_information
+from data import stations_information, data_from_station
 from distances import distance_between
 from modelling import format_data, train_time_series, forecast_time_series
 from velib_api import fetch_velib_api
@@ -24,20 +24,12 @@ def read_root():
 
 @app.get("/state/{station_id}")
 def number_bike_at_station(station_id: int):
-    stations = fetch_velib_api()
     try:
-        station = list(filter(lambda s: s.get("station_id") == station_id, stations))[0]
+        station = data_from_station(station_id)
+        n = len(station)
     except IndexError:
         return {"error": f"station {station_id} not found"}
-    try:
-        mechanical = station.get('num_bikes_available_types')[0].get('mechanical')
-        ebike = station.get('num_bikes_available_types')[1].get('ebike')
-        del station['num_bikes_available_types']
-        station['mechanical'] = mechanical
-        station['ebike'] = ebike
-    except IndexError:
-        return {"station_id": station_id, "error": "no data available"}
-    return station
+    return json.loads(station.loc[n-1, :].to_json())
 
 
 @app.get("/predict/{station_id}/{bike_type}/{delta_hours}")
