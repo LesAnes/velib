@@ -1,11 +1,12 @@
 import json
 import math
+from datetime import timedelta
 from enum import Enum
 
-import pandas as pd
+from cachier import cachier
 from fastapi import FastAPI
 
-from data import stations_information, data_from_station, get_stations, get_stations_with_bikes, get_stations_with_docks
+from data import stations_information, get_stations, get_stations_with_bikes, get_stations_with_docks
 from distances import distance_between
 from modelling import format_data, train_time_series, forecast_time_series
 
@@ -34,7 +35,8 @@ def predict_number_bike_at_station(station_id: int, bike_type: BikeType, delta_h
     return {"station_id": station_id, "bike_type": bike_type, "delta_hours": delta_hours, "forecast": num_bikes}
 
 
-@app.get("/stations")
+@app.get("/stations/")
+@cachier(stale_after=timedelta(minutes=2))
 def all_stations(latitude: float, longitude: float):
     information = stations_information()
     stations = get_stations()
@@ -42,8 +44,8 @@ def all_stations(latitude: float, longitude: float):
         lambda row: distance_between(latitude, longitude, row.lat, row.lon), axis=1)
     information_sorted = information.sort_values(by="distance").reset_index()
     information_sorted['last_state'] = information_sorted.station_id.apply(lambda x: stations.get(x))
-    available_for_departure = get_stations_with_bikes(information_sorted.station_id.values)
-    available_for_arrival = get_stations_with_docks(information_sorted.station_id.values)
+    available_for_departure = get_stations_with_bikes(information_sorted.station_id.values[:10])
+    available_for_arrival = get_stations_with_docks(information_sorted.station_id.values[:10])
     information_sorted.loc[:, 'index_departure'] = information_sorted.station_id.apply(
         lambda x: available_for_departure.index(x) if x in available_for_departure else -1)
     information_sorted.loc[:, 'index_arrival'] = information_sorted.station_id.apply(

@@ -13,6 +13,7 @@ plotly_express = "^0.4.1"
 fbprophet = "^0.5"
 fastapi = "^0.47.1"
 uvicorn = "^0.11.2"
+cachier = "^1.2.8"
 
 [tool.poetry.dev-dependencies]
 pylint = "^2.4"
