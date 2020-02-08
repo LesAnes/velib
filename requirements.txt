@@ -197,6 +197,7 @@ pydantic==1.3 \
     --hash=sha256:2eab7d548b0e530bf65bee7855ad8164c2f6a889975d5e9c4eefd1e7c98245dc
 pymeeus==0.3.6 \
     --hash=sha256:1f1ba0682e1b5c6b0cd6432c966e8bc8acc31737ea6f0ae79917a2189a98bb87
+pymongo==3.10.1
 pyobjc-core==6.1; sys_platform == "darwin" \
     --hash=sha256:1a0fbf012fb575e0adf8c18cfd4453e657cc2c0deb2660c529bf524ba4c9149a \
     --hash=sha256:470ccd754efb468a59426942673dfc3c5c59f33a5b8cae8a7fc1be975c2d4128 \
