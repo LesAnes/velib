@@ -9,7 +9,8 @@ from dotenv import load_dotenv
 load_dotenv('.env')
 
 myclient = pymongo.MongoClient(
-    f"{getenv('MONGODB_URI')}/stations?ssl=true&replicaSet=Velibetter-shard-0&authSource=admin&retryWrites=true&w=majority")
+    f"{getenv('MONGODB_URI')}/stations?ssl=true&replicaSet=Velibetter-shard-0&authSource=admin&retryWrites=true&w=majority"
+)
 
 db = myclient["stations"]
 
