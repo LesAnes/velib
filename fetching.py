@@ -7,7 +7,7 @@ from velib_api import fetch_velib_api
 col = get_stations_status_collection()
 
 def main():
-    # print(datetime.now())
+    print(datetime.now())
     stations = fetch_velib_api()
     for station in stations:
         # Api mapping
@@ -22,7 +22,7 @@ def main():
         status_by_station_id_sorted = status_by_station_id.sort('last_reported', -1)
         last_reported = status_by_station_id_sorted[0].get('last_reported') if status_by_station_id_sorted.count() > 0 else None
         if last_reported and int(station.get('last_reported')) > int(last_reported):
-            # print(f'status updated for station {station.get('station_id')}')
+            print(f'status updated for station {station.get("station_id")}')
             col.insert_one(station)
 
 if __name__ == '__main__':
