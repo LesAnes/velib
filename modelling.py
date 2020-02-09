@@ -4,10 +4,10 @@ from fbprophet import Prophet
 from fbprophet.plot import add_changepoints_to_plot
 
 
-def format_data(station_id: int, is_mechanical: bool = True) -> pd.DataFrame:
-    df = pd.read_csv(f'data/stations_status/{station_id}.csv')
-    df['ds'] = pd.to_datetime(df['last_reported'], unit='s')
-    df['y'] = df['mechanical'] if is_mechanical else df['ebike']
+def format_data(station_status, is_mechanical: bool = True) -> pd.DataFrame:
+    station_status_df = pd.DataFrame(station_status)
+    df['ds'] = pd.to_datetime(station_status_df['last_reported'], unit='s')
+    df['y'] = station_status_df['mechanical'] if is_mechanical else station_status_df['ebike']
     return df
 
 

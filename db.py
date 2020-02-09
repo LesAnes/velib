@@ -20,3 +20,6 @@ def get_station_information_collection():
 def get_stations_status_collection():
     db = myclient["stations"]
     return db["stations_status"]
+
+def get_station_status(col, station_id):
+    return col.find({"station_id": station_id})

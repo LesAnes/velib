@@ -7,6 +7,7 @@ from cachier import cachier
 from fastapi import FastAPI
 
 from data import stations_information, get_stations, get_stations_with_bikes, get_stations_with_docks
+from db import get_stations_status_collection, get_station_status
 from distances import distance_between
 from modelling import format_data, train_time_series, forecast_time_series
 
@@ -25,8 +26,10 @@ def read_root():
 
 @app.get("/predict/{station_id}/{bike_type}/{delta_hours}")
 def predict_number_bike_at_station(station_id: int, bike_type: BikeType, delta_hours: int = 1):
+    station_status_collection = get_stations_status_collection()
     try:
-        df = format_data(station_id)
+        station_status = get_station_status(station_status_collection, station_id)
+        df = format_data(station_status)
     except FileNotFoundError:
         return {"error": f"station {station_id} not found"}
     m = train_time_series(df)
