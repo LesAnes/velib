@@ -26,9 +26,9 @@ def read_root():
 
 @app.get("/predict/{station_id}/{bike_type}/{delta_hours}")
 def predict_number_bike_at_station(station_id: int, bike_type: BikeType, delta_hours: int = 1):
-    station_status_collection = get_stations_status_collection()
     try:
-        station_status = get_station_status(station_status_collection, station_id)
+        station_status = get_station_status(station_id)
+        print(station_status)
         df = format_data(station_status)
     except FileNotFoundError:
         return {"error": f"station {station_id} not found"}

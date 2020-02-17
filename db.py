@@ -19,7 +19,8 @@ def get_station_information_collection():
 
 def get_stations_status_collection():
     db = myclient["stations"]
-    return db["stations_status"]
+    return [el for el in db["stations_status"].find({})]
 
-def get_station_status(col, station_id):
-    return col.find({"station_id": station_id})
+
+def get_station_status(station_id):
+    return [el for el in myclient["stations"].find({"station_id": station_id})]
