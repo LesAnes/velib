@@ -13,15 +13,5 @@ myclient = pymongo.MongoClient(
 )
 
 
-def get_station_information_collection():
-    db = myclient["stations"]
-    return db["station_information"]
-
-
-def get_stations_status_collection():
-    db = myclient["stations"]
-    return [el for el in db["stations_status"].find({})]
-
-
 def get_station_status(station_id):
     return [el for el in myclient["stations"]["stations_status"].find({"station_id": station_id})]
