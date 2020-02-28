@@ -5,6 +5,7 @@ from enum import Enum
 
 from cachier import cachier
 from fastapi import FastAPI
+from velib_api import fetch_velib_api, fetch_info_velib_api
 
 from data import stations_information, get_stations, get_stations_with_bikes, get_stations_with_docks
 from distances import distance_between
@@ -51,3 +52,14 @@ def all_stations(latitude: float, longitude: float):
     information_sorted.loc[:, 'index_arrival'] = information_sorted.station_id.apply(
         lambda x: available_for_arrival.index(x) if x in available_for_arrival else -1)
     return json.loads(information_sorted.drop("index", axis=1).to_json(orient='records'))
+
+
+@app.get("/station-list/")
+def station_list():
+    stations = fetch_velib_api()
+    return stations
+
+@app.get("/station-info-list/")
+def station_list():
+    infos = fetch_info_velib_api()
+    return infos
