@@ -3,6 +3,7 @@ import math
 from datetime import timedelta
 from enum import Enum
 from bson.json_util import dumps
+import humps
 
 from cachier import cachier
 from fastapi import FastAPI
@@ -64,4 +65,4 @@ def station_list():
 @app.get("/station-info-list/")
 def station_list():
     col = get_station_information_collection()
-    return json.loads(dumps(col.find({}, { "_id": 0 })))
+    return json.loads(humps.camelize(dumps(col.find({}, { "_id": 0 }))))
