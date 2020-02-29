@@ -65,4 +65,4 @@ def station_list():
 @app.get("/station-info-list/")
 def station_list():
     col = get_station_information_collection()
-    return json.loads(humps.camelize(dumps(col.find({}, { "_id": 0 }))))
+    return json.loads(dumps(humps.camelize(list(col.find({}, { "_id": 0 })))))
