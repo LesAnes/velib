@@ -7,6 +7,7 @@ import humps
 
 from cachier import cachier
 from fastapi import FastAPI
+from starlette.middleware.cors import CORSMiddleware
 from velib_api import fetch_velib_api
 from db import get_station_information_collection
 
@@ -16,6 +17,18 @@ from modelling import format_data, train_time_series, forecast_time_series
 
 app = FastAPI()
 
+origins = [
+    "http://127.0.0.1:4200",
+    "http://localhost:4200",
+]
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=origins,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 class BikeType(str, Enum):
     mechanical = "mechanical"
