@@ -2,10 +2,12 @@ import json
 import math
 from datetime import timedelta
 from enum import Enum
+from bson.json_util import dumps
 
 from cachier import cachier
 from fastapi import FastAPI
-from velib_api import fetch_velib_api, fetch_info_velib_api
+from velib_api import fetch_velib_api
+from db import get_station_information_collection
 
 from data import stations_information, get_stations, get_stations_with_bikes, get_stations_with_docks
 from distances import distance_between
@@ -61,5 +63,5 @@ def station_list():
 
 @app.get("/station-info-list/")
 def station_list():
-    infos = fetch_info_velib_api()
-    return infos
+    col = get_station_information_collection()
+    return json.loads(dumps(col.find({}, { "_id": 0 })))
