@@ -227,6 +227,14 @@ version = "0.0.13"
 
 [[package]]
 category = "main"
+description = "camelCase converter"
+name = "humps"
+optional = false
+python-versions = "*"
+version = "0.2.2"
+
+[[package]]
+category = "main"
 description = "Internationalized Domain Names in Applications (IDNA)"
 name = "idna"
 optional = false
@@ -728,7 +736,7 @@ python-versions = "*"
 version = "1.11.2"
 
 [metadata]
-content-hash = "9f4b4ef068fc3b85e82bc32bff5777ff0cc2e820e553c262e3f015aaf0152c76"
+content-hash = "5191c790b8aec55dd7c5f8595cb8664917a3a75a89c5f228a947a72c8be08456"
 python-versions = "^3.7"
 
 [metadata.files]
@@ -835,6 +843,10 @@ holidays = [
 ]
 httptools = [
     {file = "httptools-0.0.13.tar.gz", hash = "sha256:e00cbd7ba01ff748e494248183abc6e153f49181169d8a3d41bb49132ca01dfc"},
+]
+humps = [
+    {file = "humps-0.2.2-py2.py3-none-any.whl", hash = "sha256:401de60fd73673b697086ba7c865966751c57b11cce57a37c9eabb3e75938417"},
+    {file = "humps-0.2.2.tar.gz", hash = "sha256:777f7a17f6b20aa9cc078d63b56ebd66532c6b2c88b370f1d596d5205410f67c"},
 ]
 idna = [
     {file = "idna-2.8-py2.py3-none-any.whl", hash = "sha256:ea8b7f6188e6fa117537c3df7da9fc686d485087abf6ac197f9c46432f7e4a3c"},
