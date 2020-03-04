@@ -4,7 +4,7 @@ from os.path import join, dirname
 import pymongo
 from dotenv import load_dotenv
 
-from main import LatLngBoundsLiteral
+from models import LatLngBoundsLiteral
 
 dotenv_path = join(dirname(__file__), '.env')
 load_dotenv(dotenv_path)
@@ -34,7 +34,7 @@ def get_closest_stations_information(latLngBoundsLiteral: LatLngBoundsLiteral):
             "$geoWithin": {
                 "$box": [
                     [latLngBoundsLiteral.south, latLngBoundsLiteral.west],
-                    [latLngBoundsLiteral.nort, latLngBoundsLiteral.east]
+                    [latLngBoundsLiteral.north, latLngBoundsLiteral.east]
                 ]
             }
         }
