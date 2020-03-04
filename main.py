@@ -8,6 +8,7 @@ from fastapi import FastAPI
 from pydantic import BaseModel
 from starlette.middleware.cors import CORSMiddleware
 
+from api_mapping import lat_lng_mapping
 from db import get_station_status, get_closest_stations_information, get_station_information_collection
 from modelling import format_data, train_time_series, forecast_time_series
 from models import LatLngBoundsLiteral
@@ -61,11 +62,15 @@ def station_list():
 
 @app.get("/closest-station-list/")
 def closest_stations_information_list(latLngBoundsLiteral: LatLngBoundsLiteral):
-    stations = get_closest_stations_information(latLngBoundsLiteral)
-    return json.loads(dumps(humps.camelize(stations)))
+    col = get_station_information_collection()
+    stations = get_closest_stations_information(col, latLngBoundsLiteral)
+    mapped_stations = list(map(lat_lng_mapping, stations))
+    return json.loads(dumps(humps.camelize(mapped_stations)))
 
 
 @app.get("/station-info-list/")
 def station_information_list():
     col = get_station_information_collection()
-    return json.loads(dumps(humps.camelize(list(col.find({}, {"_id": 0})))))
+    stations = list(col.find({}, {"_id": 0}))
+    mapped_stations = list(map(lat_lng_mapping, stations))
+    return json.loads(dumps(humps.camelize(mapped_stations)))

@@ -28,8 +28,8 @@ def get_station_status(station_id):
     return [el for el in myclient["stations"]["stations_status"].find({"station_id": station_id})]
 
 
-def get_closest_stations_information(latLngBoundsLiteral: LatLngBoundsLiteral):
-    return [el for el in myclient["stations"]["stations_status"].find({
+def get_closest_stations_information(col, latLngBoundsLiteral: LatLngBoundsLiteral):
+    return [el for el in col.find({
         "loc": {
             "$geoWithin": {
                 "$box": [
