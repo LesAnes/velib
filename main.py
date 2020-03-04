@@ -60,7 +60,7 @@ def station_list():
     return stations
 
 
-@app.get("/closest-station-list/")
+@app.post("/closest-station-list/")
 def closest_stations_information_list(latLngBoundsLiteral: LatLngBoundsLiteral):
     col = get_station_information_collection()
     stations = get_closest_stations_information(col, latLngBoundsLiteral)

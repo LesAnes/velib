@@ -33,9 +33,9 @@ def get_closest_stations_information(col, latLngBoundsLiteral: LatLngBoundsLiter
         "loc": {
             "$geoWithin": {
                 "$box": [
-                    [latLngBoundsLiteral.south, latLngBoundsLiteral.west],
-                    [latLngBoundsLiteral.north, latLngBoundsLiteral.east]
+                    [latLngBoundsLiteral.west, latLngBoundsLiteral.south],
+                    [latLngBoundsLiteral.east, latLngBoundsLiteral.north]
                 ]
             }
         }
-    })]
+    }, {"_id": 0})]
