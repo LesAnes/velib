@@ -28,6 +28,10 @@ def get_station_status(station_id):
     return [el for el in myclient["stations"]["stations_status"].find({"station_id": station_id})]
 
 
+def get_last_station_status(col, station_id):
+    return col.find({"station_id": station_id}, {"_id": 0}).sort([("last_reported", pymongo.DESCENDING)]).limit(1)[0]
+
+
 def get_closest_stations_information(col, latLngBoundsLiteral: LatLngBoundsLiteral):
     return [el for el in col.find({
         "loc": {

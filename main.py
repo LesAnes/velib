@@ -1,6 +1,7 @@
 import json
 import math
 from enum import Enum
+from typing import List
 
 import humps
 from bson.json_util import dumps
@@ -9,7 +10,8 @@ from pydantic import BaseModel
 from starlette.middleware.cors import CORSMiddleware
 
 from api_mapping import lat_lng_mapping
-from db import get_station_status, get_closest_stations_information, get_station_information_collection
+from db import get_station_status, get_closest_stations_information, get_station_information_collection, \
+    get_stations_status_collection, get_last_station_status
 from modelling import format_data, train_time_series, forecast_time_series
 from models import LatLngBoundsLiteral
 from velib_api import fetch_velib_api
@@ -54,18 +56,26 @@ def predict_number_bike_at_station(station_id: int, bike_type: BikeType, delta_h
     return {"station_id": station_id, "bike_type": bike_type, "delta_hours": delta_hours, "forecast": num_bikes}
 
 
-@app.get("/station-list/")
-def station_list():
-    stations = fetch_velib_api()
-    return stations
-
-
-@app.post("/closest-station-list/")
+@app.post("/closest-station-info-list/")
 def closest_stations_information_list(latLngBoundsLiteral: LatLngBoundsLiteral):
     col = get_station_information_collection()
     stations = get_closest_stations_information(col, latLngBoundsLiteral)
     mapped_stations = list(map(lat_lng_mapping, stations))
     return json.loads(dumps(humps.camelize(mapped_stations)))
+
+
+@app.get("/station-status/{station_id}")
+def stations_status_list(station_id: int):
+    col = get_stations_status_collection()
+    station = get_last_station_status(col, station_id)
+    return json.loads(dumps(humps.camelize(station)))
+
+
+@app.post("/station-status-list/")
+def stations_status_list(station_ids: List[int]):
+    col = get_stations_status_collection()
+    stations = [get_last_station_status(col, station_id) for station_id in station_ids]
+    return json.loads(dumps(humps.camelize(stations)))
 
 
 @app.get("/station-info-list/")
