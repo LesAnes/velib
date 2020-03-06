@@ -1,20 +1,21 @@
+import concurrent
 import json
 import math
 from enum import Enum
+from functools import partial
 from typing import List
 
 import humps
 from bson.json_util import dumps
 from fastapi import FastAPI
-from pydantic import BaseModel
 from starlette.middleware.cors import CORSMiddleware
 
 from api_mapping import lat_lng_mapping
 from db import get_station_status, get_closest_stations_information, get_station_information_collection, \
     get_stations_status_collection, get_last_station_status
+from distances import distance_between, sort_stations
 from modelling import format_data, train_time_series, forecast_time_series
 from models import LatLngBoundsLiteral
-from velib_api import fetch_velib_api
 
 app = FastAPI()
 
@@ -64,8 +65,33 @@ def closest_stations_information_list(latLngBoundsLiteral: LatLngBoundsLiteral):
     return json.loads(dumps(humps.camelize(mapped_stations)))
 
 
+@app.get("/departure/{latitude}/{longitude}")
+def departure_list(latitude: float, longitude: float):
+    info_collection = get_station_information_collection()
+    stations_info = list(info_collection.find({}, {"_id": 0}))
+    stations = []
+    for i, (station_info) in enumerate(stations_info):
+        station_status = stations_status_single(station_info["station_id"])
+        if station_status["isInstalled"] == 1 and station_status["isRenting"] == 1:
+            station_info["distance"] = distance_between(latitude, longitude, station_info["loc"][1],
+                                                        station_info["loc"][0])
+            stations.append(station_info)
+    return json.loads(dumps(humps.camelize(sorted(stations, key=lambda x: x['distance']))))
+
+
+@app.get("/arrival/{latitude}/{longitude}")
+def arrival_list(latitude: float, longitude: float):
+    info_collection = get_station_information_collection()
+    status_collection = get_stations_status_collection()
+    stations_info = list(info_collection.find({}, {"_id": 0}))
+    with concurrent.futures.ThreadPoolExecutor() as executor:
+        fn = partial(sort_stations, latitude, longitude, status_collection)
+        stations = executor.map(fn, stations_info, timeout=30)
+    return json.loads(dumps(humps.camelize(sorted(stations, key=lambda x: x['distance']))))
+
+
 @app.get("/station-status/{station_id}")
-def stations_status_list(station_id: int):
+def stations_status_single(station_id: int):
     col = get_stations_status_collection()
     station = get_last_station_status(col, station_id)
     return json.loads(dumps(humps.camelize(station)))

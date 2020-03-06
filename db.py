@@ -2,6 +2,7 @@ from os import getenv
 from os.path import join, dirname
 
 import pymongo
+import requests
 from dotenv import load_dotenv
 
 from models import LatLngBoundsLiteral
@@ -30,6 +31,11 @@ def get_station_status(station_id):
 
 def get_last_station_status(col, station_id):
     return col.find({"station_id": station_id}, {"_id": 0}).sort([("last_reported", pymongo.DESCENDING)]).limit(1)[0]
+
+
+def get_last_station_status_from_api():
+    req = requests.get("https://velib-metropole-opendata.smoove.pro/opendata/Velib_Metropole/station_status.json")
+    return req.json()["stations"]
 
 
 def get_closest_stations_information(col, latLngBoundsLiteral: LatLngBoundsLiteral):
