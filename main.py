@@ -1,8 +1,7 @@
-import concurrent
+import json
 import json
 import math
 from enum import Enum
-from functools import partial
 from typing import List
 
 import humps
@@ -11,9 +10,8 @@ from fastapi import FastAPI
 from starlette.middleware.cors import CORSMiddleware
 
 from api_mapping import lat_lng_mapping
-from db import get_station_status, get_closest_stations_information, get_station_information_collection, \
-    get_stations_status_collection, get_last_station_status
-from distances import distance_between, sort_stations
+from db import get_station_status, get_stations_information_in_polygon, get_station_information_collection, \
+    get_stations_status_collection, get_closest_stations_information, get_last_stations_status
 from modelling import format_data, train_time_series, forecast_time_series
 from models import LatLngBoundsLiteral
 
@@ -59,49 +57,42 @@ def predict_number_bike_at_station(station_id: int, bike_type: BikeType, delta_h
 
 @app.post("/closest-station-info-list/")
 def closest_stations_information_list(latLngBoundsLiteral: LatLngBoundsLiteral):
-    col = get_station_information_collection()
-    stations = get_closest_stations_information(col, latLngBoundsLiteral)
+    stations = get_stations_information_in_polygon(latLngBoundsLiteral)
     mapped_stations = list(map(lat_lng_mapping, stations))
     return json.loads(dumps(humps.camelize(mapped_stations)))
 
 
 @app.get("/departure/{latitude}/{longitude}")
 def departure_list(latitude: float, longitude: float):
-    info_collection = get_station_information_collection()
-    stations_info = list(info_collection.find({}, {"_id": 0}))
+    stations_info = get_closest_stations_information(latitude, longitude)
+    stations_status = get_last_stations_status([s["station_id"] for s in stations_info])
     stations = []
-    for i, (station_info) in enumerate(stations_info):
-        station_status = stations_status_single(station_info["station_id"])
-        if station_status["isInstalled"] == 1 and station_status["isRenting"] == 1:
-            station_info["distance"] = distance_between(latitude, longitude, station_info["loc"][1],
-                                                        station_info["loc"][0])
-            stations.append(station_info)
-    return json.loads(dumps(humps.camelize(sorted(stations, key=lambda x: x['distance']))))
+    for s_status in stations_status:
+        s_id = s_status["station_id"]
+        s_info = list(filter(lambda s: s["station_id"] == s_id, stations_info))[0]
+        s_info.pop("_id")
+        stations.append({**s_info, **s_status})
+    return json.loads(dumps(humps.camelize(stations)))
 
 
 @app.get("/arrival/{latitude}/{longitude}")
 def arrival_list(latitude: float, longitude: float):
-    info_collection = get_station_information_collection()
-    status_collection = get_stations_status_collection()
-    stations_info = list(info_collection.find({}, {"_id": 0}))
-    with concurrent.futures.ThreadPoolExecutor() as executor:
-        fn = partial(sort_stations, latitude, longitude, status_collection)
-        stations = executor.map(fn, stations_info, timeout=30)
-    return json.loads(dumps(humps.camelize(sorted(stations, key=lambda x: x['distance']))))
+    stations_info = get_closest_stations_information(latitude, longitude)
+    stations_status = get_last_stations_status([s["station_id"] for s in stations_info], departure=False)
+    stations = []
+    for s_status in stations_status:
+        s_id = s_status["station_id"]
+        s_info = list(filter(lambda s: s["station_id"] == s_id, stations_info))[0]
+        s_info.pop("_id")
+        stations.append({**s_info, **s_status})
+    return json.loads(dumps(humps.camelize(sorted(stations, key=lambda x: (x['distance']))
+                                           )))
 
 
 @app.get("/station-status/{station_id}")
 def stations_status_single(station_id: int):
-    col = get_stations_status_collection()
-    station = get_last_station_status(col, station_id)
+    station = get_last_stations_status([station_id])
     return json.loads(dumps(humps.camelize(station)))
-
-
-@app.post("/station-status-list/")
-def stations_status_list(station_ids: List[int]):
-    col = get_stations_status_collection()
-    stations = [get_last_station_status(col, station_id) for station_id in station_ids]
-    return json.loads(dumps(humps.camelize(stations)))
 
 
 @app.get("/station-info-list/")
