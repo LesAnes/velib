@@ -35,6 +35,16 @@ def get_station_status(station_id):
     return list(col.find({"station_id": station_id}))
 
 
+def get_last_station_status(station_id):
+    col = get_stations_last_state_collection()
+    return list(col.find({"station_id": station_id}, {"_id": 0}))[0]
+
+
+def get_station_information(station_id):
+    col = get_station_information_collection()
+    return list(col.find({"station_id": station_id}, {"_id": 0}))[0]
+
+
 def get_last_stations_status(station_ids, departure=True):
     col = get_stations_last_state_collection()
     if departure:

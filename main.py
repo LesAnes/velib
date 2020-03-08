@@ -11,7 +11,8 @@ from starlette.middleware.cors import CORSMiddleware
 
 from api_mapping import lat_lng_mapping
 from db import get_station_status, get_stations_information_in_polygon, get_station_information_collection, \
-    get_stations_status_collection, get_closest_stations_information, get_last_stations_status
+    get_stations_status_collection, get_closest_stations_information, get_last_stations_status, \
+    get_last_station_status, get_station_information
 from modelling import format_data, train_time_series, forecast_time_series
 from models import LatLngBoundsLiteral
 
@@ -93,8 +94,9 @@ def arrival_list(latitude: float, longitude: float):
 
 @app.get("/station-status/{station_id}")
 def stations_status_single(station_id: int):
-    station = get_last_stations_status([station_id])
-    return json.loads(dumps(humps.camelize(lat_lng_mapping(station))))
+    s_status = get_last_station_status(station_id)
+    s_info = get_station_information(station_id)
+    return json.loads(dumps(humps.camelize(lat_lng_mapping({**s_info, **s_status}))))
 
 
 @app.get("/station-info-list/")
