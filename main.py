@@ -74,7 +74,8 @@ def departure_list(latitude: float, longitude: float):
         s_info.pop("_id")
         stations.append({**s_info, **s_status})
     mapped_stations = list(map(lat_lng_mapping, stations))
-    return json.loads(dumps(humps.camelize(mapped_stations)))
+    sorted_stations = sorted(mapped_stations, key=lambda i: i['distance'])
+    return json.loads(dumps(humps.camelize(sorted_stations)))
 
 
 @app.get("/arrival/{latitude}/{longitude}")
@@ -88,8 +89,8 @@ def arrival_list(latitude: float, longitude: float):
         s_info.pop("_id")
         stations.append({**s_info, **s_status})
     mapped_stations = list(map(lat_lng_mapping, stations))
-    return json.loads(dumps(humps.camelize(sorted(mapped_stations, key=lambda x: (x['distance']))
-                                           )))
+    sorted_stations = sorted(mapped_stations, key=lambda i: i['distance'])
+    return json.loads(dumps(humps.camelize(sorted_stations)))
 
 
 @app.get("/station-status/{station_id}")
