@@ -6,3 +6,8 @@ class LatLngBoundsLiteral(BaseModel):
     north: float
     south: float
     west: float
+
+
+class Coordinate(BaseModel):
+    lat: float
+    lng: float

@@ -12,9 +12,9 @@ from starlette.middleware.cors import CORSMiddleware
 from api_mapping import lat_lng_mapping
 from db import get_station_status, get_stations_information_in_polygon, get_station_information_collection, \
     get_stations_status_collection, get_closest_stations_information, get_last_stations_status, \
-    get_last_station_status, get_station_information
+    get_last_station_status, get_station_information, get_station_information_with_distance
 from modelling import format_data, train_time_series, forecast_time_series
-from models import LatLngBoundsLiteral
+from models import LatLngBoundsLiteral, Coordinate
 
 app = FastAPI()
 
@@ -38,11 +38,6 @@ class BikeType(str, Enum):
     ebike = "ebike"
 
 
-@app.get("/")
-def read_root():
-    return {"Hello": "World"}
-
-
 @app.get("/predict/{station_id}/{bike_type}/{delta_hours}")
 def predict_number_bike_at_station(station_id: int, bike_type: BikeType, delta_hours: int = 1):
     try:
@@ -56,16 +51,16 @@ def predict_number_bike_at_station(station_id: int, bike_type: BikeType, delta_h
     return {"station_id": station_id, "bike_type": bike_type, "delta_hours": delta_hours, "forecast": num_bikes}
 
 
-@app.post("/closest-station-info-list/")
-def closest_stations_information_list(latLngBoundsLiteral: LatLngBoundsLiteral):
+@app.post("/stations-in-polygon/")
+def closest_stations_information_list(latLngBoundsLiteral: LatLngBoundsLiteral, currentPosition: Coordinate = None):
     stations = get_stations_information_in_polygon(latLngBoundsLiteral)
     mapped_stations = list(map(lat_lng_mapping, stations))
     return json.loads(dumps(humps.camelize(mapped_stations)))
 
 
-@app.get("/departure/{latitude}/{longitude}")
-def departure_list(latitude: float, longitude: float):
-    stations_info = get_closest_stations_information(latitude, longitude)
+@app.post("/departure/")
+def departure_list(currentPosition: Coordinate):
+    stations_info = get_closest_stations_information(currentPosition.lat, currentPosition.lng)
     stations_status = get_last_stations_status([s["station_id"] for s in stations_info])
     stations = []
     for s_status in stations_status:
@@ -78,9 +73,9 @@ def departure_list(latitude: float, longitude: float):
     return json.loads(dumps(humps.camelize(sorted_stations)))
 
 
-@app.get("/arrival/{latitude}/{longitude}")
-def arrival_list(latitude: float, longitude: float):
-    stations_info = get_closest_stations_information(latitude, longitude)
+@app.post("/arrival/")
+def arrival_list(currentPosition: Coordinate):
+    stations_info = get_closest_stations_information(currentPosition.lat, currentPosition.lng)
     stations_status = get_last_stations_status([s["station_id"] for s in stations_info], departure=False)
     stations = []
     for s_status in stations_status:
@@ -93,16 +88,13 @@ def arrival_list(latitude: float, longitude: float):
     return json.loads(dumps(humps.camelize(sorted_stations)))
 
 
-@app.get("/station-status/{station_id}")
-def stations_status_single(station_id: int):
+@app.post("/stations/{station_id}")
+def stations_status_single(station_id: int, current_position: Coordinate = None):
+    s_info = {}
+    if current_position:
+        s_info = get_station_information_with_distance(station_id, current_position.lat, current_position.lng)[0]
+        s_info.pop("_id")
+    else:
+        s_info = get_station_information(station_id)
     s_status = get_last_station_status(station_id)
-    s_info = get_station_information(station_id)
     return json.loads(dumps(humps.camelize(lat_lng_mapping({**s_info, **s_status}))))
-
-
-@app.get("/station-info-list/")
-def station_information_list():
-    col = get_station_information_collection()
-    stations = list(col.find({}, {"_id": 0}))
-    mapped_stations = list(map(lat_lng_mapping, stations))
-    return json.loads(dumps(humps.camelize(mapped_stations)))

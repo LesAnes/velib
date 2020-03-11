@@ -71,6 +71,20 @@ def get_stations_information_in_polygon(latLngBoundsLiteral: LatLngBoundsLiteral
     }, {"_id": 0}))
 
 
+def get_station_information_with_distance(station_id: int, latitude: float, longitude: float):
+    col = get_station_information_collection()
+    return list(col.aggregate([
+        {
+            "$geoNear": {
+                "near": {"type": "Point", "coordinates": [longitude, latitude]},
+                "key": "loc",
+                "distanceField": "distance",
+            }
+        },
+        { "$match": { "station_id": station_id } },
+    ]))
+
+
 def get_closest_stations_information(latitude: float, longitude: float):
     col = get_station_information_collection()
     return list(col.aggregate([
@@ -82,5 +96,4 @@ def get_closest_stations_information(latitude: float, longitude: float):
                 "maxDistance": 1000
             }
         },
-        {"$limit": 15}
     ]))
