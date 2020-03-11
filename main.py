@@ -7,6 +7,7 @@ from typing import List
 import humps
 from bson.json_util import dumps
 from fastapi import FastAPI
+from starlette.requests import Request
 from starlette.middleware.cors import CORSMiddleware
 
 from api_mapping import lat_lng_mapping
@@ -38,6 +39,14 @@ class BikeType(str, Enum):
     ebike = "ebike"
 
 
+# It would have been so cute but fuck off, I can't make it
+# @app.middleware("http")
+# async def add_process_time_header(request: Request, call_next):
+#     data = humps.decamelize(await request.json())
+#     # response = await call_next(request)
+#     return await call_next(data)
+
+
 @app.get("/predict/{station_id}/{bike_type}/{delta_hours}")
 def predict_number_bike_at_station(station_id: int, bike_type: BikeType, delta_hours: int = 1):
     try:
@@ -53,14 +62,14 @@ def predict_number_bike_at_station(station_id: int, bike_type: BikeType, delta_h
 
 @app.post("/stations-in-polygon/")
 def closest_stations_information_list(latLngBoundsLiteral: LatLngBoundsLiteral, currentPosition: Coordinate = None):
-    stations = get_stations_information_in_polygon(latLngBoundsLiteral)
+    stations = get_stations_information_in_polygon(latLngBoundsLiteral, currentPosition)
     mapped_stations = list(map(lat_lng_mapping, stations))
     return json.loads(dumps(humps.camelize(mapped_stations)))
 
 
 @app.post("/departure/")
-def departure_list(currentPosition: Coordinate):
-    stations_info = get_closest_stations_information(currentPosition.lat, currentPosition.lng)
+def departure_list(current_position: Coordinate):
+    stations_info = get_closest_stations_information(current_position.lat, current_position.lng)
     stations_status = get_last_stations_status([s["station_id"] for s in stations_info])
     stations = []
     for s_status in stations_status:
@@ -74,8 +83,8 @@ def departure_list(currentPosition: Coordinate):
 
 
 @app.post("/arrival/")
-def arrival_list(currentPosition: Coordinate):
-    stations_info = get_closest_stations_information(currentPosition.lat, currentPosition.lng)
+def arrival_list(current_position: Coordinate):
+    stations_info = get_closest_stations_information(current_position.lat, current_position.lng)
     stations_status = get_last_stations_status([s["station_id"] for s in stations_info], departure=False)
     stations = []
     for s_status in stations_status:
@@ -90,7 +99,7 @@ def arrival_list(currentPosition: Coordinate):
 
 @app.post("/stations/{station_id}")
 def stations_status_single(station_id: int, current_position: Coordinate = None):
-    s_info = {}
+    s_info = None
     if current_position:
         s_info = get_station_information_with_distance(station_id, current_position.lat, current_position.lng)[0]
         s_info.pop("_id")

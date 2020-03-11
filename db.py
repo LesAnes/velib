@@ -5,7 +5,7 @@ import pymongo
 import requests
 from dotenv import load_dotenv
 
-from models import LatLngBoundsLiteral
+from models import LatLngBoundsLiteral, Coordinate
 
 dotenv_path = join(dirname(__file__), '.env')
 load_dotenv(dotenv_path)
@@ -40,11 +40,6 @@ def get_last_station_status(station_id):
     return list(col.find({"station_id": station_id}, {"_id": 0}))[0]
 
 
-def get_station_information(station_id):
-    col = get_station_information_collection()
-    return list(col.find({"station_id": station_id}, {"_id": 0}))[0]
-
-
 def get_last_stations_status(station_ids, departure=True):
     col = get_stations_last_state_collection()
     if departure:
@@ -57,14 +52,19 @@ def get_last_station_status_from_api():
     return req.json()["stations"]
 
 
-def get_stations_information_in_polygon(latLngBoundsLiteral: LatLngBoundsLiteral):
+def get_station_information(station_id):
+    col = get_station_information_collection()
+    return list(col.find({"station_id": station_id}, {"_id": 0}))[0]
+
+
+def get_stations_information_in_polygon(lat_lng_bounds_literal: LatLngBoundsLiteral, current_position: Coordinate = None):
     col = get_station_information_collection()
     return list(col.find({
         "loc": {
             "$geoWithin": {
                 "$box": [
-                    [latLngBoundsLiteral.west, latLngBoundsLiteral.south],
-                    [latLngBoundsLiteral.east, latLngBoundsLiteral.north]
+                    [lat_lng_bounds_literal.west, lat_lng_bounds_literal.south],
+                    [lat_lng_bounds_literal.east, lat_lng_bounds_literal.north]
                 ]
             }
         }
