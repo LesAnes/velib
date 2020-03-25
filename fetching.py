@@ -22,7 +22,7 @@ def main():
         status_by_station_id = stations_status_col.find({'station_id': station.get('station_id')})
         status_by_station_id_sorted = status_by_station_id.sort('last_reported', -1)
         last_reported = status_by_station_id_sorted[0].get(
-            'last_reported') if status_by_station_id_sorted.count_documents() > 0 else None
+            'last_reported') if status_by_station_id_sorted.count() > 0 else None
         if last_reported and int(station.get('last_reported')) > int(last_reported):
             print(f'status updated for station {station.get("station_id")}')
             stations_status_col.insert_one(station)
