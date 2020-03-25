@@ -26,6 +26,7 @@ def main():
         if last_reported and int(station.get('last_reported')) > int(last_reported):
             print(f'status updated for station {station.get("station_id")}')
             stations_status_col.insert_one(station)
+            station.pop('_id')
             stations_last_state_col.update_one(
                 {"station_id": station.get('station_id')},
                 {"$set": station}
