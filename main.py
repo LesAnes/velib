@@ -16,6 +16,7 @@ from db import get_station_status, get_stations_information_in_polygon, get_stat
     get_last_station_status, get_station_information, get_station_information_with_distance
 from modelling import format_data, train_time_series, forecast_time_series
 from models import LatLngBoundsLiteral, Coordinate
+from scoring import score_station
 
 app = FastAPI()
 
@@ -95,6 +96,7 @@ def arrival_list(current_position: Coordinate):
         s_info.pop("_id")
         stations.append({**s_info, **s_status})
     mapped_stations = list(map(lat_lng_mapping, stations))
+    mapped_stations = list(map(score_station, mapped_stations))
     sorted_stations = sorted(mapped_stations, key=lambda i: i['distance'])
     return json.loads(dumps(humps.camelize(sorted_stations)))
 
