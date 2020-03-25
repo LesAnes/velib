@@ -1,3 +1,5 @@
+import math
+
 from models import Station
 
 
@@ -6,5 +8,5 @@ def score_station(station: Station, departure=True):
         score = 10000 * station.numBikesAvailable / (station.capacity * station.distance)
     else:
         score = 10000 * station.numDocksAvailable / (station.capacity * station.distance)
-    station["score"] = score
+    station["score"] = math.floor(score)
     return station
