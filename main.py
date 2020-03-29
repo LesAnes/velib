@@ -83,7 +83,7 @@ def departure_list(current_position: Coordinate):
         stations.append({**s_info, **s_status})
     mapped_stations = list(map(lat_lng_mapping, stations))
     mapped_stations = list(map(score_station, mapped_stations))
-    sorted_stations = sorted(mapped_stations, key=lambda i: i['distance'])
+    sorted_stations = sorted(mapped_stations, key=lambda i: i['score'])
     return json.loads(dumps(humps.camelize(sorted_stations)))
 
 
@@ -99,7 +99,7 @@ def arrival_list(current_position: Coordinate):
         stations.append({**s_info, **s_status})
     mapped_stations = list(map(lat_lng_mapping, stations))
     mapped_stations = list(map(partial(score_station, departure=False), mapped_stations))
-    sorted_stations = sorted(mapped_stations, key=lambda i: i['distance'])
+    sorted_stations = sorted(mapped_stations, key=lambda i: i['score'])
     return json.loads(dumps(humps.camelize(sorted_stations)))
 
 
