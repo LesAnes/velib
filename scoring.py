@@ -1,4 +1,5 @@
 import math
+import numpy as np
 
 
 def score_station(station, departure=True):

@@ -3,18 +3,16 @@ import json
 import math
 from enum import Enum
 from functools import partial
-from typing import List
-
+from joblib import Parallel, delayed
+import joblib
 import humps
 from bson.json_util import dumps
 from fastapi import FastAPI
-from starlette.requests import Request
 from starlette.middleware.cors import CORSMiddleware
 
 from api_mapping import lat_lng_mapping
-from db import get_station_status, get_stations_information_in_polygon, get_station_information_collection, \
-    get_stations_status_collection, get_closest_stations_information, get_last_stations_status, \
-    get_last_station_status, get_station_information, get_station_information_with_distance
+from db import get_stations_information_in_polygon, get_closest_stations_information, get_last_stations_status, \
+    get_last_station_status, get_station_information, get_station_information_with_distance, get_station_status
 from modelling import format_data, train_time_series, forecast_time_series
 from models import LatLngBoundsLiteral, Coordinate
 from scoring import score_station
@@ -51,17 +49,16 @@ class BikeType(str, Enum):
 #     return await call_next(data)
 
 
-@app.get("/predict/{station_id}/{bike_type}/{delta_hours}")
-def predict_number_bike_at_station(station_id: int, bike_type: BikeType, delta_hours: int = 1):
-    try:
-        station_status = get_station_status(station_id)
-        df = format_data(station_status)
-    except FileNotFoundError:
-        return {"error": f"station {station_id} not found"}
-    m = train_time_series(df)
-    forecast = forecast_time_series(m, delta_hours)
-    num_bikes = math.ceil(forecast.loc[len(df) - 1, "yhat"]) if forecast.loc[len(df) - 1, "yhat"] > 0 else 0
-    return {"station_id": station_id, "bike_type": bike_type, "delta_hours": delta_hours, "forecast": num_bikes}
+def get_station_forecast(station_id: int, delta_hours: int = 1):
+    station_status = get_station_status(station_id)
+    num_bikes = []
+    for i in range(2):
+        df = format_data(station_status, bool(i))
+        m = train_time_series(df)
+        forecast = forecast_time_series(m, delta_hours)
+        num_bikes.append(math.ceil(forecast.loc[len(df) - 1, "yhat"]) if forecast.loc[len(df) - 1, "yhat"] > 0 else 0)
+    print(num_bikes)
+    return num_bikes
 
 
 @app.post("/stations-in-polygon/")
@@ -72,7 +69,7 @@ def closest_stations_information_list(latLngBoundsLiteral: LatLngBoundsLiteral, 
 
 
 @app.post("/departure/")
-def departure_list(current_position: Coordinate):
+def departure_list(current_position: Coordinate, delta_hours=0):
     stations_info = get_closest_stations_information(current_position.lat, current_position.lng)
     stations_status = get_last_stations_status([s["station_id"] for s in stations_info])
     stations = []
@@ -84,6 +81,8 @@ def departure_list(current_position: Coordinate):
     mapped_stations = list(map(lat_lng_mapping, stations))
     mapped_stations = list(map(score_station, mapped_stations))
     sorted_stations = sorted(mapped_stations, key=lambda i: i['score'], reverse=True)
+    sorted_station_ids = [s["station_id"] for s in sorted_stations[:10]]
+    Parallel(n_jobs=8, backend="multiprocessing")(delayed(get_station_forecast)(i) for i in sorted_station_ids)
     return json.loads(dumps(humps.camelize(sorted_stations)))
 
 
