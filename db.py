@@ -57,8 +57,7 @@ def get_station_information(station_id):
     return list(col.find({"station_id": station_id}, {"_id": 0}))[0]
 
 
-def get_stations_information_in_polygon(lat_lng_bounds_literal: LatLngBoundsLiteral,
-                                        current_position: Coordinate = None):
+def get_stations_information_in_polygon(lat_lng_bounds_literal: LatLngBoundsLiteral, current_position: Coordinate = None):
     col = get_station_information_collection()
     return list(col.find({
         "loc": {
@@ -82,7 +81,7 @@ def get_station_information_with_distance(station_id: int, latitude: float, long
                 "distanceField": "distance",
             }
         },
-        {"$match": {"station_id": station_id}},
+        { "$match": { "station_id": station_id } },
     ]))
 
 
@@ -96,5 +95,5 @@ def get_closest_stations_information(latitude: float, longitude: float):
                 "distanceField": "distance",
                 "maxDistance": 1000
             }
-        }, {"$limit": 15}
+        },
     ]))
