@@ -1,6 +1,7 @@
 import json
 from enum import Enum
 from functools import partial
+from typing import Optional
 
 import humps
 from bson.json_util import dumps
@@ -54,8 +55,9 @@ def closest_stations_information_list(latLngBoundsLiteral: LatLngBoundsLiteral, 
 
 
 @app.post("/departure/")
-def departure_list(current_position: Coordinate, delta_hours: int = 0):
-    stations_info = get_closest_stations_information(current_position.lat, current_position.lng)
+def departure_list(currentPosition: Coordinate, delta: int = None):
+    print(delta)
+    stations_info = get_closest_stations_information(currentPosition.lat, currentPosition.lng)
     stations_status = get_last_stations_status([s["station_id"] for s in stations_info])
     stations = []
     for s_status in stations_status:
@@ -64,8 +66,9 @@ def departure_list(current_position: Coordinate, delta_hours: int = 0):
         s_info.pop("_id")
         stations.append({**s_info, **s_status})
     mapped_stations = list(map(lat_lng_mapping, stations))
-    if delta_hours > 0:
-        mapped_stations = list(map(lambda x: get_forecast(x, delta_hours), mapped_stations))
+    if delta is not None:
+        print("forecasting")
+        mapped_stations = list(map(lambda x: get_forecast(x, delta), mapped_stations))
     mapped_stations = list(map(score_station, mapped_stations))
     sorted_stations = sorted(mapped_stations, key=lambda i: i['score'], reverse=True)
     return json.loads(dumps(humps.camelize(sorted_stations)))
