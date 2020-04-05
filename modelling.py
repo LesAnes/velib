@@ -1,34 +1,38 @@
-import matplotlib.pyplot as plt
+import math
+
 import pandas as pd
-from fbprophet import Prophet
-from fbprophet.plot import add_changepoints_to_plot
+from statsmodels.tsa.arima_model import ARMA
+
+from db import get_station_status
 
 
-def format_data(station_status, is_mechanical: bool = True) -> pd.DataFrame:
+def format_ts_data(station_status, is_mechanical: bool = True, is_departure: bool = True) -> pd.DataFrame:
     station_status_df = pd.DataFrame(station_status)
-    station_status_df['ds'] = pd.to_datetime(station_status_df['last_reported'], unit='s')
-    station_status_df['y'] = station_status_df['mechanical'] if is_mechanical else station_status_df['ebike']
-    return station_status_df.tail(n=200)
+    if is_departure:
+        data = station_status_df['mechanical'].dropna().tolist() if is_mechanical else station_status_df[
+            'ebike'].dropna().tolist()
+    else:
+        data = station_status_df['num_docks_available'].dropna().tolist()
+    data = data[-300:]
+    return pd.DataFrame(data)
 
 
-def train_time_series(df: pd.DataFrame) -> Prophet:
-    m = Prophet()
-    m.fit(df)
-    return m
+def predict_time_series(station_status, is_mechanical: bool, max_bikes: int, delta_hours: int,
+                        is_departure: bool) -> int:
+    df = format_ts_data(station_status, is_mechanical, is_departure)
+    model = ARMA(df, order=(2, 1)).fit(disp=False)
+    forecasts = model.predict(len(df), len(df) + int(delta_hours))
+    forecast = min(max_bikes, max(0, math.ceil(forecasts.tolist()[-1])))
+    return forecast
 
 
-def forecast_time_series(m: Prophet, n_hours: int) -> pd.DataFrame:
-    future = m.make_future_dataframe(periods=n_hours, freq='H')
-    return m.predict(future)
-
-
-if __name__ == "__main__":
-    station_id = 38522
-    df = format_data(station_id)
-    m = train_time_series(df)
-    forecast = forecast_time_series(m, 6)
-
-    fig = m.plot(forecast)
-    a = add_changepoints_to_plot(fig.gca(), m, forecast)
-    plt.plot()
-    plt.savefig('fig.png')
+def get_forecast(station, delta_hours: int = 1, is_departure: bool = True):
+    station_id = station["station_id"]
+    station_status = get_station_status(station_id)
+    max_value = station_status[0]["num_bikes_available"] + station_status[0]["num_docks_available"]
+    if is_departure:
+        station["mechanical"] = predict_time_series(station_status, True, max_value, delta_hours, True)
+        station["ebike"] = predict_time_series(station_status, False, max_value, delta_hours, True)
+    else:
+        station["num_docks_available"] = predict_time_series(station_status, False, max_value, delta_hours, True)
+    return station
