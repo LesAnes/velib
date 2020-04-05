@@ -2,6 +2,7 @@ import math
 
 import pandas as pd
 from statsmodels.tsa.arima_model import ARMA
+from statsmodels.tsa.stattools import kpss, adfuller
 
 from db import get_station_status
 
@@ -17,11 +18,12 @@ def format_ts_data(station_status, is_mechanical: bool = True, is_departure: boo
     return pd.DataFrame(data)
 
 
-def predict_time_series(station_status, is_mechanical: bool, max_bikes: int, delta_hours: int,
+def predict_time_series(station_status, is_mechanical: bool, max_bikes: int, delta: int,
                         is_departure: bool) -> int:
     df = format_ts_data(station_status, is_mechanical, is_departure)
+    # print(adfuller(df))
     model = ARMA(df, order=(2, 1)).fit(disp=False)
-    forecasts = model.predict(len(df), len(df) + int(delta_hours))
+    forecasts = model.predict(len(df), len(df) + 6 * int(delta)) # because we fetch every 10min
     forecast = min(max_bikes, max(0, math.ceil(forecasts.tolist()[-1])))
     return forecast
 

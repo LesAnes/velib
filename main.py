@@ -1,7 +1,6 @@
 import json
 from enum import Enum
 from functools import partial
-from typing import Optional
 
 import humps
 from bson.json_util import dumps
@@ -33,6 +32,7 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
 
 class ListRequest(BaseModel):
     currentPosition: Coordinate
