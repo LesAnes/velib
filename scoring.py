@@ -1,11 +1,10 @@
 import math
-import numpy as np
 
 
 def score_station(station, departure=True):
     if departure:
-        score = 20 * station["num_bikes_available"] / np.log2(0.1 * station["distance"])
+        score = 10000 * station["num_bikes_available"] / (station["capacity"] * station["distance"])
     else:
-        score = 10 * station["num_docks_available"] / np.log2(0.1 * station["distance"])
-    station["score"] = min(math.floor(score), 99)
+        score = 10000 * station["num_docks_available"] / (station["capacity"] * station["distance"])
+    station["score"] = min(math.floor(score), 100)
     return station

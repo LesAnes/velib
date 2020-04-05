@@ -1,17 +1,21 @@
 import json
+import json
+import math
 from enum import Enum
 from functools import partial
+from typing import List
 
 import humps
 from bson.json_util import dumps
 from fastapi import FastAPI
-from pydantic import BaseModel
+from starlette.requests import Request
 from starlette.middleware.cors import CORSMiddleware
 
 from api_mapping import lat_lng_mapping
-from db import get_stations_information_in_polygon, get_closest_stations_information, get_last_stations_status, \
+from db import get_station_status, get_stations_information_in_polygon, get_station_information_collection, \
+    get_stations_status_collection, get_closest_stations_information, get_last_stations_status, \
     get_last_station_status, get_station_information, get_station_information_with_distance
-from modelling import get_forecast
+from modelling import format_data, train_time_series, forecast_time_series
 from models import LatLngBoundsLiteral, Coordinate
 from scoring import score_station
 
@@ -34,11 +38,6 @@ app.add_middleware(
 )
 
 
-class ListRequest(BaseModel):
-    currentPosition: Coordinate
-    delta: int = None
-
-
 class BikeType(str, Enum):
     mechanical = "mechanical"
     ebike = "ebike"
@@ -52,6 +51,19 @@ class BikeType(str, Enum):
 #     return await call_next(data)
 
 
+@app.get("/predict/{station_id}/{bike_type}/{delta_hours}")
+def predict_number_bike_at_station(station_id: int, bike_type: BikeType, delta_hours: int = 1):
+    try:
+        station_status = get_station_status(station_id)
+        df = format_data(station_status)
+    except FileNotFoundError:
+        return {"error": f"station {station_id} not found"}
+    m = train_time_series(df)
+    forecast = forecast_time_series(m, delta_hours)
+    num_bikes = math.ceil(forecast.loc[len(df) - 1, "yhat"]) if forecast.loc[len(df) - 1, "yhat"] > 0 else 0
+    return {"station_id": station_id, "bike_type": bike_type, "delta_hours": delta_hours, "forecast": num_bikes}
+
+
 @app.post("/stations-in-polygon/")
 def closest_stations_information_list(latLngBoundsLiteral: LatLngBoundsLiteral, currentPosition: Coordinate = None):
     stations = get_stations_information_in_polygon(latLngBoundsLiteral, currentPosition)
@@ -60,8 +72,8 @@ def closest_stations_information_list(latLngBoundsLiteral: LatLngBoundsLiteral, 
 
 
 @app.post("/departure/")
-def departure_list(request: ListRequest):
-    stations_info = get_closest_stations_information(request.currentPosition.lat, request.currentPosition.lng)
+def departure_list(current_position: Coordinate):
+    stations_info = get_closest_stations_information(current_position.lat, current_position.lng)
     stations_status = get_last_stations_status([s["station_id"] for s in stations_info])
     stations = []
     for s_status in stations_status:
@@ -70,16 +82,14 @@ def departure_list(request: ListRequest):
         s_info.pop("_id")
         stations.append({**s_info, **s_status})
     mapped_stations = list(map(lat_lng_mapping, stations))
-    if request.delta is not None:
-        mapped_stations = list(map(lambda x: get_forecast(x, request.delta), mapped_stations))
     mapped_stations = list(map(score_station, mapped_stations))
     sorted_stations = sorted(mapped_stations, key=lambda i: i['score'], reverse=True)
     return json.loads(dumps(humps.camelize(sorted_stations)))
 
 
 @app.post("/arrival/")
-def arrival_list(request: ListRequest):
-    stations_info = get_closest_stations_information(request.currentPosition.lat, request.currentPosition.lng)
+def arrival_list(current_position: Coordinate):
+    stations_info = get_closest_stations_information(current_position.lat, current_position.lng)
     stations_status = get_last_stations_status([s["station_id"] for s in stations_info], departure=False)
     stations = []
     for s_status in stations_status:
@@ -88,8 +98,6 @@ def arrival_list(request: ListRequest):
         s_info.pop("_id")
         stations.append({**s_info, **s_status})
     mapped_stations = list(map(lat_lng_mapping, stations))
-    if request.delta is not None:
-        mapped_stations = list(map(lambda x: get_forecast(x, request.delta, is_departure=False), mapped_stations))
     mapped_stations = list(map(partial(score_station, departure=False), mapped_stations))
     sorted_stations = sorted(mapped_stations, key=lambda i: i['score'], reverse=True)
     return json.loads(dumps(humps.camelize(sorted_stations)))
