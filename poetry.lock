@@ -150,14 +150,6 @@ version = "0.0.13"
 
 [[package]]
 category = "main"
-description = "camelCase converter"
-name = "humps"
-optional = false
-python-versions = "*"
-version = "0.2.2"
-
-[[package]]
-category = "main"
 description = "Internationalized Domain Names in Applications (IDNA)"
 name = "idna"
 optional = false
@@ -285,6 +277,14 @@ version = "1.3"
 [package.extras]
 email = ["email-validator (>=1.0.3)"]
 typing_extensions = ["typing-extensions (>=3.7.2)"]
+
+[[package]]
+category = "main"
+description = "🐫  Convert strings (and dictionary keys) between snake case, camel case and pascal case in Python. Inspired by Humps for Node"
+name = "pyhumps"
+optional = false
+python-versions = "*"
+version = "1.3.1"
 
 [[package]]
 category = "dev"
@@ -507,7 +507,7 @@ python-versions = "*"
 version = "1.11.2"
 
 [metadata]
-content-hash = "fba26c13b7ed338436190120342f6437238269ed4c6b2b9f85ec63add9093ab1"
+content-hash = "09aa6273e6d21f43452521d11053d4bcfdbc4ef7c2dcbc0f8a5983c5a00eea0d"
 python-versions = "^3.7"
 
 [metadata.files]
@@ -560,10 +560,6 @@ h11 = [
 ]
 httptools = [
     {file = "httptools-0.0.13.tar.gz", hash = "sha256:e00cbd7ba01ff748e494248183abc6e153f49181169d8a3d41bb49132ca01dfc"},
-]
-humps = [
-    {file = "humps-0.2.2-py2.py3-none-any.whl", hash = "sha256:401de60fd73673b697086ba7c865966751c57b11cce57a37c9eabb3e75938417"},
-    {file = "humps-0.2.2.tar.gz", hash = "sha256:777f7a17f6b20aa9cc078d63b56ebd66532c6b2c88b370f1d596d5205410f67c"},
 ]
 idna = [
     {file = "idna-2.8-py2.py3-none-any.whl", hash = "sha256:ea8b7f6188e6fa117537c3df7da9fc686d485087abf6ac197f9c46432f7e4a3c"},
@@ -679,6 +675,10 @@ pydantic = [
     {file = "pydantic-1.3-cp38-cp38-manylinux2010_x86_64.whl", hash = "sha256:b60f2b3b0e0dd74f1800a57d1bbd597839d16faf267e45fa4a5407b15d311085"},
     {file = "pydantic-1.3-py36.py37.py38-none-any.whl", hash = "sha256:d03df07b7611004140b0fef91548878c2b5f48c520a8cb76d11d20e9887a495e"},
     {file = "pydantic-1.3.tar.gz", hash = "sha256:2eab7d548b0e530bf65bee7855ad8164c2f6a889975d5e9c4eefd1e7c98245dc"},
+]
+pyhumps = [
+    {file = "pyhumps-1.3.1-py3-none-any.whl", hash = "sha256:32452d75ec3c9e44b845c3591fc54ab4734338fcf88a34d7cb1f42017faeffc3"},
+    {file = "pyhumps-1.3.1.tar.gz", hash = "sha256:71aaf4069eae682274dc7f33dfe24dff1f955bbcaa58f4d83d3853eb775116bc"},
 ]
 pylint = [
     {file = "pylint-2.4.4-py3-none-any.whl", hash = "sha256:886e6afc935ea2590b462664b161ca9a5e40168ea99e5300935f6591ad467df4"},
