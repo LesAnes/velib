@@ -22,7 +22,8 @@ origins = [
     "http://localhost:4200",
     "https://localhost:4200",
     "https://dazzling-agnesi-2a409f.netlify.com",
-    "https://velibetter.fr"
+    "https://velibetter.fr/"
+    "https://velibetter.fr",
 ]
 
 app.add_middleware(
@@ -33,15 +34,16 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-
-class ListRequest(BaseModel):
-    currentPosition: Coordinate
-    delta: int = None
+print(origins)
 
 
 class BikeType(str, Enum):
     mechanical = "mechanical"
     ebike = "ebike"
+    
+
+class OptionsList(BaseModel):
+    delta: int = None
 
 
 # It would have been so cute but fuck off, I can't make it
@@ -60,8 +62,8 @@ def closest_stations_information_list(latLngBoundsLiteral: LatLngBoundsLiteral, 
 
 
 @app.post("/departure/")
-def departure_list(request: ListRequest):
-    stations_info = get_closest_stations_information(request.currentPosition.lat, request.currentPosition.lng)
+def departure_list(currentPosition: Coordinate, options: OptionsList):
+    stations_info = get_closest_stations_information(currentPosition.lat, currentPosition.lng)
     stations_status = get_last_stations_status([s["station_id"] for s in stations_info])
     stations = []
     for s_status in stations_status:
@@ -70,15 +72,15 @@ def departure_list(request: ListRequest):
         s_info.pop("_id")
         stations.append({**s_info, **s_status})
     mapped_stations = list(map(lat_lng_mapping, stations))
-    if request.delta is not None:
-        mapped_stations = list(map(lambda x: get_forecast(x, request.delta), mapped_stations))
+    if options.delta is not None:
+        mapped_stations = list(map(lambda x: get_forecast(x, options.delta), mapped_stations))
     mapped_stations = list(map(score_station, mapped_stations))
     sorted_stations = sorted(mapped_stations, key=lambda i: i['score'], reverse=True)
     return json.loads(dumps(humps.camelize(sorted_stations)))
 
 
 @app.post("/arrival/")
-def arrival_list(request: ListRequest):
+def arrival_list(currentPosition: Coordinate, options: OptionsList):
     stations_info = get_closest_stations_information(request.currentPosition.lat, request.currentPosition.lng)
     stations_status = get_last_stations_status([s["station_id"] for s in stations_info], departure=False)
     stations = []
@@ -88,8 +90,8 @@ def arrival_list(request: ListRequest):
         s_info.pop("_id")
         stations.append({**s_info, **s_status})
     mapped_stations = list(map(lat_lng_mapping, stations))
-    if request.delta is not None:
-        mapped_stations = list(map(lambda x: get_forecast(x, request.delta, is_departure=False), mapped_stations))
+    if options.delta is not None:
+        mapped_stations = list(map(lambda x: get_forecast(x, options.delta, is_departure=False), mapped_stations))
     mapped_stations = list(map(partial(score_station, departure=False), mapped_stations))
     sorted_stations = sorted(mapped_stations, key=lambda i: i['score'], reverse=True)
     return json.loads(dumps(humps.camelize(sorted_stations)))
