@@ -22,7 +22,7 @@ origins = [
     "http://localhost:4200",
     "https://localhost:4200",
     "https://dazzling-agnesi-2a409f.netlify.com",
-    "https://velibetter.fr/"
+    "https://velibetter.fr/",
     "https://velibetter.fr",
 ]
 
