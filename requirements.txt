@@ -66,6 +66,9 @@ holidays==0.9.12 \
     --hash=sha256:3182c4a6fef8d01a829468362ace9c3bba7645873610535fef53454dbb4ea092
 httptools==0.0.13; sys_platform != "win32" and sys_platform != "cygwin" and platform_python_implementation != "pypy" \
     --hash=sha256:e00cbd7ba01ff748e494248183abc6e153f49181169d8a3d41bb49132ca01dfc
+humps==0.2.2 \
+    --hash=sha256:401de60fd73673b697086ba7c865966751c57b11cce57a37c9eabb3e75938417 \
+    --hash=sha256:777f7a17f6b20aa9cc078d63b56ebd66532c6b2c88b370f1d596d5205410f67c
 idna==2.8 \
     --hash=sha256:ea8b7f6188e6fa117537c3df7da9fc686d485087abf6ac197f9c46432f7e4a3c \
     --hash=sha256:c357b3f628cf53ae2c4c05627ecc484553142ca23264e593d327bcde5e9c3407
@@ -198,8 +201,6 @@ pydantic==1.3 \
     --hash=sha256:b60f2b3b0e0dd74f1800a57d1bbd597839d16faf267e45fa4a5407b15d311085 \
     --hash=sha256:d03df07b7611004140b0fef91548878c2b5f48c520a8cb76d11d20e9887a495e \
     --hash=sha256:2eab7d548b0e530bf65bee7855ad8164c2f6a889975d5e9c4eefd1e7c98245dc
-pyhumps==1.3.1 \
-    --hash=sha256:32452d75ec3c9e44b845c3591fc54ab4734338fcf88a34d7cb1f42017faeffc3
 pymeeus==0.3.6 \
     --hash=sha256:1f1ba0682e1b5c6b0cd6432c966e8bc8acc31737ea6f0ae79917a2189a98bb87
 pymongo==3.10.1 \

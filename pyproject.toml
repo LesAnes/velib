@@ -17,6 +17,7 @@ cachier = "^1.2.8"
 pymongo = {extras = ["srv"], version = "^3.10.1"}
 dnspython = "^1.16.0"
 python-dotenv = "^0.10.5"
+humps = "^0.2.2"
 
 [tool.poetry.dev-dependencies]
 pylint = "^2.4"
