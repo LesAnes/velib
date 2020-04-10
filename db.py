@@ -2,7 +2,6 @@ from os import getenv
 from os.path import join, dirname
 
 import pymongo
-import requests
 from dotenv import load_dotenv
 
 from models import LatLngBoundsLiteral, Coordinate
@@ -30,6 +29,11 @@ def get_stations_last_state_collection():
     return db["stations_last_state"]
 
 
+def get_stations_feedback_collection():
+    db = myclient["stations"]
+    return db["stations_feedback"]
+
+
 def get_station_status(station_id):
     col = get_stations_status_collection()
     return list(col.find({"station_id": station_id}))
@@ -45,11 +49,6 @@ def get_last_stations_status(station_ids, departure=True):
     if departure:
         return list(col.find({"station_id": {"$in": station_ids}, "is_installed": 1, "is_renting": 1}, {"_id": 0}))
     return list(col.find({"station_id": {"$in": station_ids}, "is_installed": 1, "is_returning": 1}, {"_id": 0}))
-
-
-def get_last_station_status_from_api():
-    req = requests.get("https://velib-metropole-opendata.smoove.pro/opendata/Velib_Metropole/station_status.json")
-    return req.json()["stations"]
 
 
 def get_station_information(station_id):
@@ -98,3 +97,20 @@ def get_closest_stations_information(latitude: float, longitude: float):
             }
         }, {"$limit": 15}
     ]))
+
+
+def get_station_feedback(station_id):
+    col = get_stations_feedback_collection()
+    return list(col.find({"station_id": station_id}, {"_id": 0}))[0]
+
+
+def submit_feedback(feedback):
+    stations_feedback_col = get_stations_feedback_collection()
+    try:
+        if len(get_station_feedback(feedback.get("stationId"))) > 0:
+            stations_feedback_col.update_one(
+                {"station_id": feedback.get('station_id')},
+                {"$set": feedback}
+            )
+    except IndexError:
+        stations_feedback_col.insert_one(feedback)

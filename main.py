@@ -1,6 +1,8 @@
 import json
+import time
 from enum import Enum
 from functools import partial
+from typing import Optional
 
 import humps
 from bson.json_util import dumps
@@ -10,7 +12,7 @@ from starlette.middleware.cors import CORSMiddleware
 
 from api_mapping import lat_lng_mapping
 from db import get_stations_information_in_polygon, get_closest_stations_information, get_last_stations_status, \
-    get_last_station_status, get_station_information, get_station_information_with_distance
+    get_station_information, get_station_information_with_distance, submit_feedback, get_last_station_status
 from modelling import get_forecast
 from models import LatLngBoundsLiteral, Coordinate
 from scoring import score_station
@@ -32,13 +34,22 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+
 class BikeType(str, Enum):
     mechanical = "mechanical"
     ebike = "ebike"
-    
+
 
 class OptionsList(BaseModel):
     delta: int = None
+
+
+class Feedback(BaseModel):
+    stationId: int
+    type: str
+    numberMechanical: Optional[int]
+    numberEbike: Optional[int]
+    numberDock: Optional[int]
 
 
 # It would have been so cute but fuck off, I can't make it
@@ -102,3 +113,10 @@ def stations_status_single(station_id: int, current_position: Coordinate = None)
         s_info = get_station_information(station_id)
     s_status = get_last_station_status(station_id)
     return json.loads(dumps(humps.camelize(lat_lng_mapping({**s_info, **s_status}))))
+
+
+@app.post("/feedback/")
+def stations_status_single(feedback: Feedback):
+    feedback = feedback.dict()
+    feedback["submitted_at"] = time.time()
+    submit_feedback(feedback)
