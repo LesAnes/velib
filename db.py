@@ -1,11 +1,11 @@
+import time
 from os import getenv
 from os.path import join, dirname
 
 import pymongo
 from dotenv import load_dotenv
 
-from main import Feedback, FeedbackType
-from models import LatLngBoundsLiteral, Coordinate
+from models import LatLngBoundsLiteral, Coordinate, Feedback, FeedbackType
 
 dotenv_path = join(dirname(__file__), '.env')
 load_dotenv(dotenv_path)
@@ -111,10 +111,12 @@ def update_station_last_state(station):
 
 def submit_feedback(feedback) -> None:
     stations_feedback_col = get_stations_feedback_collection()
+    feedback = feedback.dict()
+    feedback["submitted_at"] = time.time()
     stations_feedback_col.insert_one(feedback)
 
 
-def is_valid_input(value: str) -> bool:
+def is_number_feedback(value: str) -> bool:
     try:
         int(value)
         return True
@@ -122,21 +124,35 @@ def is_valid_input(value: str) -> bool:
         return False
 
 
+def handle_not_number_feedback(feedback_value: str, field_value: int) -> int:
+    if feedback_value == "+":
+        return max(10, field_value)
+    return field_value
+
+
 def apply_feedback(feedback: Feedback):
     s_status = get_last_station_status(feedback.stationId)
-    station_total = int(s_status["mechanical"]) + int(s_status["ebike"]) + int(s_status["num_docks_available"])
+    station_total = int(s_status["num_bikes_available"]) + int(s_status["num_docks_available"])
     if feedback.type == FeedbackType.confirmed:
-        s_status["mechanical"] = feedback.numberMechanical if is_valid_input(feedback.numberMechanical) else s_status[
-            "mechanical"]
-        s_status["ebike"] = feedback.numberEbike if is_valid_input(feedback.numberEbike) else s_status["ebike"]
-        s_status["num_docks_available"] = feedback.numberDock if is_valid_input(feedback.numberDock) else s_status[
-            "num_docks_available"]
+        s_status["mechanical"] = feedback.numberMechanical \
+            if is_number_feedback(feedback.numberMechanical) \
+            else handle_not_number_feedback(feedback.numberMechanical, s_status["mechanical"])
+        s_status["ebike"] = feedback.numberEbike \
+            if is_number_feedback(feedback.numberEbike) \
+            else handle_not_number_feedback(feedback.numberEbike, s_status["ebike"])
+        s_status["num_docks_available"] = feedback.numberDock \
+            if is_number_feedback(feedback.numberDock) \
+            else handle_not_number_feedback(feedback.numberDock, s_status["num_docks_available"])
     else:
         s_status["mechanical"] = min(station_total,
                                      max(0, int(s_status["mechanical"]) - int(feedback.numberMechanical))) \
-            if is_valid_input(feedback.numberMechanical) else s_status["mechanical"]
+            if is_number_feedback(feedback.numberMechanical) \
+            else handle_not_number_feedback(feedback.numberMechanical, s_status["mechanical"])
         s_status["ebike"] = min(station_total, max(0, int(s_status["ebike"]) - int(feedback.numberEbike))) \
-            if is_valid_input(feedback.numberMechanical) else s_status["ebike"]
+            if is_number_feedback(feedback.numberEbike) \
+            else handle_not_number_feedback(feedback.numberEbike, s_status["ebike"])
         s_status["num_docks_available"] = min(station_total,
-                                              max(0, int(s_status["num_docks_available"]) - int(feedback.numberEbike))) \
-            if is_valid_input(feedback.numberMechanical) else s_status["num_docks_available"]
+                                              max(0, int(s_status["num_docks_available"]) - int(feedback.numberDock))) \
+            if is_number_feedback(feedback.numberDock) \
+            else handle_not_number_feedback(feedback.numberDock, s_status["num_docks_available"])
+    s_status["num_bikes_available"] = int(s_status["mechanical"]) + int(s_status["ebike"])

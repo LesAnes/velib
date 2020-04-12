@@ -1,4 +1,5 @@
-from typing import List
+from enum import Enum
+from typing import List, Optional
 
 from pydantic import BaseModel
 
@@ -31,3 +32,25 @@ class Station:
     mechanical: int
     ebike: int
     rentalMethods: List[str]
+
+
+class BikeType(str, Enum):
+    mechanical = "mechanical"
+    ebike = "ebike"
+
+
+class FeedbackType(str, Enum):
+    broken = "broken"
+    confirmed = "confirmed"
+
+
+class OptionsList(BaseModel):
+    delta: int = None
+
+
+class Feedback(BaseModel):
+    stationId: int
+    type: FeedbackType
+    numberMechanical: Optional[str]
+    numberEbike: Optional[str]
+    numberDock: Optional[str]
