@@ -12,7 +12,8 @@ from starlette.middleware.cors import CORSMiddleware
 
 from api_mapping import lat_lng_mapping
 from db import get_stations_information_in_polygon, get_closest_stations_information, get_last_stations_status, \
-    get_station_information, get_station_information_with_distance, submit_feedback, get_last_station_status
+    get_station_information, get_station_information_with_distance, submit_feedback, get_last_station_status, \
+    apply_feedback
 from modelling import get_forecast
 from models import LatLngBoundsLiteral, Coordinate
 from scoring import score_station
@@ -40,16 +41,21 @@ class BikeType(str, Enum):
     ebike = "ebike"
 
 
+class FeedbackType(str, Enum):
+    broken = "broken"
+    confirmed = "confirmed"
+
+
 class OptionsList(BaseModel):
     delta: int = None
 
 
 class Feedback(BaseModel):
     stationId: int
-    type: str
-    numberMechanical: Optional[int]
-    numberEbike: Optional[int]
-    numberDock: Optional[int]
+    type: FeedbackType
+    numberMechanical: Optional[str]
+    numberEbike: Optional[str]
+    numberDock: Optional[str]
 
 
 # It would have been so cute but fuck off, I can't make it
@@ -120,3 +126,4 @@ def stations_status_single(feedback: Feedback):
     feedback = feedback.dict()
     feedback["submitted_at"] = time.time()
     submit_feedback(feedback)
+    apply_feedback(feedback)
