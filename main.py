@@ -1,20 +1,18 @@
 import json
 import time
-from enum import Enum
 from functools import partial
-from typing import Optional
 
 import humps
 from bson.json_util import dumps
 from fastapi import FastAPI
-from pydantic import BaseModel
 from starlette.middleware.cors import CORSMiddleware
 
 from api_mapping import lat_lng_mapping
 from db import get_stations_information_in_polygon, get_closest_stations_information, get_last_stations_status, \
-    get_station_information, get_station_information_with_distance, submit_feedback, get_last_station_status
+    get_station_information, get_station_information_with_distance, submit_feedback, get_last_station_status, \
+    apply_feedback
 from modelling import get_forecast
-from models import LatLngBoundsLiteral, Coordinate
+from models import LatLngBoundsLiteral, Coordinate, OptionsList, Feedback
 from scoring import score_station
 
 app = FastAPI()
@@ -35,30 +33,12 @@ app.add_middleware(
 )
 
 
-class BikeType(str, Enum):
-    mechanical = "mechanical"
-    ebike = "ebike"
-
-
-class OptionsList(BaseModel):
-    delta: int = None
-
-
-class Feedback(BaseModel):
-    stationId: int
-    type: str
-    numberMechanical: Optional[int]
-    numberEbike: Optional[int]
-    numberDock: Optional[int]
-
-
 # It would have been so cute but fuck off, I can't make it
 # @app.middleware("http")
 # async def add_process_time_header(request: Request, call_next):
 #     data = humps.decamelize(await request.json())
 #     # response = await call_next(request)
 #     return await call_next(data)
-
 
 @app.post("/stations-in-polygon/")
 def closest_stations_information_list(latLngBoundsLiteral: LatLngBoundsLiteral, currentPosition: Coordinate = None):
@@ -105,7 +85,6 @@ def arrival_list(currentPosition: Coordinate, options: OptionsList):
 
 @app.post("/stations/{station_id}")
 def stations_status_single(station_id: int, current_position: Coordinate = None):
-    s_info = None
     if current_position:
         s_info = get_station_information_with_distance(station_id, current_position.lat, current_position.lng)[0]
         s_info.pop("_id")
@@ -117,6 +96,5 @@ def stations_status_single(station_id: int, current_position: Coordinate = None)
 
 @app.post("/feedback/")
 def stations_status_single(feedback: Feedback):
-    feedback = feedback.dict()
-    feedback["submitted_at"] = time.time()
     submit_feedback(feedback)
+    apply_feedback(feedback)
