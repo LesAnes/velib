@@ -58,7 +58,7 @@ def departure_list(currentPosition: Coordinate, options: OptionsList):
         s_info.pop("_id")
         stations.append({**s_info, **s_status})
     mapped_stations = list(map(lat_lng_mapping, stations))
-    if options.delta is not None:
+    if options.delta is not None and options.delta != 0:
         mapped_stations = list(map(lambda x: get_forecast(x, options.delta), mapped_stations))
     mapped_stations = list(map(score_station, mapped_stations))
     sorted_stations = sorted(mapped_stations, key=lambda i: i['score'], reverse=True)
