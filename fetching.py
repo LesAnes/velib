@@ -1,6 +1,7 @@
 from datetime import datetime
 
-from db import get_stations_status_collection, get_stations_last_state_collection, update_station_last_state
+from db import get_stations_status_collection, get_stations_last_state_collection, update_station_last_state, \
+    remove_old_status
 from velib_api import fetch_velib_api
 
 stations_status_col = get_stations_status_collection()
@@ -25,6 +26,7 @@ def main():
             'last_reported') if status_by_station_id_sorted.count() > 0 else None
         if last_reported and int(station.get('last_reported')) > int(last_reported):
             print(f'status updated for station {station.get("station_id")}')
+            remove_old_status()
             stations_status_col.insert_one(station)
             update_station_last_state(station)
 

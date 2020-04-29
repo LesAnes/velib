@@ -1,4 +1,5 @@
 import time
+from datetime import timedelta, datetime
 from os import getenv
 from os.path import join, dirname
 
@@ -38,6 +39,13 @@ def get_stations_feedback_collection():
 def get_station_status(station_id) -> list:
     col = get_stations_status_collection()
     return list(col.find({"station_id": station_id}))
+
+
+def remove_old_status() -> None:
+    col = get_stations_status_collection()
+    three_months_ago = (datetime.now() - timedelta(days=100)).strftime("%s")
+    col.remove({"last_reported": {"$lt": three_months_ago}})
+    print(f'removed status before {datetime.fromtimestamp(float(three_months_ago))}')
 
 
 def get_last_station_status(station_id) -> list:
