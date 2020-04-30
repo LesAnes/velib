@@ -43,9 +43,9 @@ def get_station_status(station_id) -> list:
 
 def remove_old_status() -> None:
     col = get_stations_status_collection()
-    three_months_ago = (datetime.now() - timedelta(days=100)).strftime("%s")
-    col.delete_many({"last_reported": {"$lt": three_months_ago}})
-    print(f'removed status before {datetime.fromtimestamp(float(three_months_ago))}')
+    one_months_ago = (datetime.now() - timedelta(days=30)).strftime("%s")
+    col.delete_many({"last_reported": {"$lt": one_months_ago}})
+    print(f'removed status before {datetime.fromtimestamp(float(one_months_ago))}')
 
 
 def get_last_station_status(station_id) -> list:
