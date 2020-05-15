@@ -43,51 +43,64 @@ app.add_middleware(
 
 @app.post("/stations-in-polygon/")
 def closest_stations_information_list(latLngBoundsLiteral: LatLngBoundsLiteral, currentPosition: Coordinate = None):
-    stations = get_stations_information_in_polygon(latLngBoundsLiteral, currentPosition)
+    stations = get_stations_information_in_polygon(
+        latLngBoundsLiteral, currentPosition)
     mapped_stations = list(map(lat_lng_mapping, stations))
     return json.loads(dumps(humps.camelize(mapped_stations)))
 
 
 @app.post("/departure/")
 def departure_list(currentPosition: Coordinate, options: OptionsList):
-    stations_info = get_closest_stations_information(currentPosition.lat, currentPosition.lng)
-    stations_status = get_last_stations_status([s["station_id"] for s in stations_info])
+    stations_info = get_closest_stations_information(
+        currentPosition.lat, currentPosition.lng)
+    stations_status = get_last_stations_status(
+        [s["station_id"] for s in stations_info])
     stations = []
     for s_status in stations_status:
         s_id = s_status["station_id"]
-        s_info = list(filter(lambda s: s["station_id"] == s_id, stations_info))[0]
+        s_info = list(
+            filter(lambda s: s["station_id"] == s_id, stations_info))[0]
         s_info.pop("_id")
         stations.append({**s_info, **s_status})
     mapped_stations = list(map(lat_lng_mapping, stations))
     if options.delta is not None and options.delta != 0:
-        mapped_stations = list(map(lambda x: get_forecast(x, options.delta), mapped_stations))
+        mapped_stations = list(
+            map(lambda x: get_forecast(x, options.delta), mapped_stations))
     mapped_stations = list(map(score_station, mapped_stations))
-    sorted_stations = sorted(mapped_stations, key=lambda i: i['score'], reverse=True)
+    sorted_stations = sorted(
+        mapped_stations, key=lambda i: i['score'], reverse=True)
     return json.loads(dumps(humps.camelize(sorted_stations)))
 
 
 @app.post("/arrival/")
 def arrival_list(currentPosition: Coordinate, options: OptionsList):
-    stations_info = get_closest_stations_information(currentPosition.lat, currentPosition.lng)
-    stations_status = get_last_stations_status([s["station_id"] for s in stations_info], departure=False)
+    stations_info = get_closest_stations_information(
+        currentPosition.lat, currentPosition.lng)
+    stations_status = get_last_stations_status(
+        [s["station_id"] for s in stations_info], departure=False)
     stations = []
     for s_status in stations_status:
         s_id = s_status["station_id"]
-        s_info = list(filter(lambda s: s["station_id"] == s_id, stations_info))[0]
+        s_info = list(
+            filter(lambda s: s["station_id"] == s_id, stations_info))[0]
         s_info.pop("_id")
         stations.append({**s_info, **s_status})
     mapped_stations = list(map(lat_lng_mapping, stations))
     if options.delta is not None:
-        mapped_stations = list(map(lambda x: get_forecast(x, options.delta, is_departure=False), mapped_stations))
-    mapped_stations = list(map(partial(score_station, departure=False), mapped_stations))
-    sorted_stations = sorted(mapped_stations, key=lambda i: i['score'], reverse=True)
+        mapped_stations = list(map(lambda x: get_forecast(
+            x, options.delta, is_departure=False), mapped_stations))
+    mapped_stations = list(
+        map(partial(score_station, departure=False), mapped_stations))
+    sorted_stations = sorted(
+        mapped_stations, key=lambda i: i['score'], reverse=True)
     return json.loads(dumps(humps.camelize(sorted_stations)))
 
 
 @app.post("/stations/{station_id}")
 def stations_status_single(station_id: int, current_position: Coordinate = None):
     if current_position:
-        s_info = get_station_information_with_distance(station_id, current_position.lat, current_position.lng)[0]
+        s_info = get_station_information_with_distance(
+            station_id, current_position.lat, current_position.lng)[0]
         s_info.pop("_id")
     else:
         s_info = get_station_information(station_id)
@@ -96,6 +109,6 @@ def stations_status_single(station_id: int, current_position: Coordinate = None)
 
 
 @app.post("/feedback/")
-def stations_status_single(feedback: Feedback):
+def process_feedback(feedback: Feedback):
     submit_feedback(feedback)
     apply_feedback(feedback)

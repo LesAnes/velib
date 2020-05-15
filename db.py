@@ -45,7 +45,8 @@ def remove_old_status() -> None:
     col = get_stations_status_collection()
     one_months_ago = (datetime.now() - timedelta(days=30)).strftime("%s")
     col.delete_many({"last_reported": {"$lt": one_months_ago}})
-    print(f'removed status before {datetime.fromtimestamp(float(one_months_ago))}')
+    print(
+        f'removed status before {datetime.fromtimestamp(float(one_months_ago))}')
 
 
 def get_last_station_status(station_id) -> list:
@@ -110,7 +111,8 @@ def get_closest_stations_information(latitude: float, longitude: float) -> list:
 
 def update_station_last_state(station):
     col = get_stations_last_state_collection()
-    station.pop('_id')
+    if station.get("_id"):
+        station.pop('_id')
     col.update_one(
         {"station_id": station.get('station_id')},
         {"$set": station}
@@ -121,7 +123,9 @@ def submit_feedback(feedback) -> None:
     stations_feedback_col = get_stations_feedback_collection()
     feedback = feedback.dict()
     feedback["submitted_at"] = time.time()
+    print(feedback)
     stations_feedback_col.insert_one(feedback)
+    print("submitted")
 
 
 def is_number_feedback(value: str) -> bool:
@@ -140,27 +144,31 @@ def handle_not_number_feedback(feedback_value: str, field_value: int) -> int:
 
 def apply_feedback(feedback: Feedback):
     s_status = get_last_station_status(feedback.stationId)
-    station_total = int(s_status["num_bikes_available"]) + int(s_status["num_docks_available"])
+    station_total = int(s_status["num_bikes_available"]) + \
+        int(s_status["num_docks_available"])
     if feedback.type == FeedbackType.confirmed:
-        s_status["mechanical"] = feedback.numberMechanical \
-            if is_number_feedback(feedback.numberMechanical) \
-            else handle_not_number_feedback(feedback.numberMechanical, s_status["mechanical"])
-        s_status["ebike"] = feedback.numberEbike \
-            if is_number_feedback(feedback.numberEbike) \
-            else handle_not_number_feedback(feedback.numberEbike, s_status["ebike"])
-        s_status["num_docks_available"] = feedback.numberDock \
-            if is_number_feedback(feedback.numberDock) \
-            else handle_not_number_feedback(feedback.numberDock, s_status["num_docks_available"])
+        s_status["mechanical"] = feedback.mechanical \
+            if is_number_feedback(feedback.mechanical) \
+            else handle_not_number_feedback(feedback.mechanical, s_status["mechanical"])
+        s_status["ebike"] = feedback.ebike \
+            if is_number_feedback(feedback.ebike) \
+            else handle_not_number_feedback(feedback.ebike, s_status["ebike"])
+        s_status["num_docks_available"] = feedback.dock \
+            if is_number_feedback(feedback.dock) \
+            else handle_not_number_feedback(feedback.dock, s_status["num_docks_available"])
     else:
         s_status["mechanical"] = min(station_total,
-                                     max(0, int(s_status["mechanical"]) - int(feedback.numberMechanical))) \
-            if is_number_feedback(feedback.numberMechanical) \
-            else handle_not_number_feedback(feedback.numberMechanical, s_status["mechanical"])
-        s_status["ebike"] = min(station_total, max(0, int(s_status["ebike"]) - int(feedback.numberEbike))) \
-            if is_number_feedback(feedback.numberEbike) \
-            else handle_not_number_feedback(feedback.numberEbike, s_status["ebike"])
+                                     max(0, int(s_status["mechanical"]) - int(feedback.mechanical))) \
+            if is_number_feedback(feedback.mechanical) \
+            else handle_not_number_feedback(feedback.mechanical, s_status["mechanical"])
+        s_status["ebike"] = min(station_total, max(0, int(s_status["ebike"]) - int(feedback.ebike))) \
+            if is_number_feedback(feedback.ebike) \
+            else handle_not_number_feedback(feedback.ebike, s_status["ebike"])
         s_status["num_docks_available"] = min(station_total,
-                                              max(0, int(s_status["num_docks_available"]) - int(feedback.numberDock))) \
-            if is_number_feedback(feedback.numberDock) \
-            else handle_not_number_feedback(feedback.numberDock, s_status["num_docks_available"])
-    s_status["num_bikes_available"] = int(s_status["mechanical"]) + int(s_status["ebike"])
+                                              max(0, int(s_status["num_docks_available"]) - int(feedback.dock))) \
+            if is_number_feedback(feedback.dock) \
+            else handle_not_number_feedback(feedback.dock, s_status["num_docks_available"])
+    s_status["num_bikes_available"] = int(
+        s_status["mechanical"]) + int(s_status["ebike"])
+
+    update_station_last_state(s_status)
