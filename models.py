@@ -16,6 +16,10 @@ class Coordinate(BaseModel):
     lng: float
 
 
+class Address(BaseModel):
+    name: str
+
+
 class Station:
     stationId: int
     name: str
