@@ -3,16 +3,20 @@ import time
 from functools import partial
 
 import humps
+import numpy as np
+import pandas as pd
 from bson.json_util import dumps
 from fastapi import FastAPI
 from starlette.middleware.cors import CORSMiddleware
 
 from api_mapping import lat_lng_mapping
-from db import get_stations_information_in_polygon, get_closest_stations_information, get_last_stations_status, \
-    get_station_information, get_station_information_with_distance, submit_feedback, get_last_station_status, \
-    apply_feedback
+from db import (apply_feedback, get_closest_stations_information,
+                get_last_station_status, get_last_stations_status,
+                get_station_information, get_station_information_with_distance,
+                get_station_status, get_stations_information_in_polygon,
+                submit_feedback)
 from modelling import get_forecast
-from models import LatLngBoundsLiteral, Coordinate, OptionsList, Feedback
+from models import Coordinate, Feedback, LatLngBoundsLiteral, OptionsList
 from scoring import score_station
 
 app = FastAPI()
@@ -112,3 +116,20 @@ def stations_status_single(station_id: int, current_position: Coordinate = None)
 def process_feedback(feedback: Feedback):
     submit_feedback(feedback)
     apply_feedback(feedback)
+
+
+@app.post('/trend-graph/')
+def get_trend_graph_data(station_id: int):
+    statuses = pd.DataFrame(get_station_status(station_id))
+    statuses.index = pd.to_datetime(
+        statuses.last_reported, unit='s', origin='unix')
+
+    def percentile(n):
+        def percentile_(x):
+            return np.percentile(x, n)
+        percentile_.__name__ = 'percentile_%s' % n
+        return percentile_
+
+    trends = statuses.num_bikes_available.groupby([statuses.index.dayofweek, statuses.index.hour]).agg(
+        [percentile(10), percentile(25), 'mean', percentile(66), percentile(90)])
+    return trends.to_json(orient="index")
